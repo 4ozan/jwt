@@ -22,14 +22,26 @@ const signature = jwt.sign({
 }
 
 function verifyToken(token:string){
-   const verified = jwt.verify(token, jwtSecret)
-   return verified
+    let ans= true
+    try{
+  jwt.verify(token, jwtSecret)
+   }catch(e){
+    ans = false
+   }
+   return ans
 }
 
 function decodeToken( token: string) {
-    const decoded= jwt.decode(token)
-    return decoded
+    const decoded = jwt.decode(token)
+
+    if(decoded){
+        return true
+    }else {
+        return false
+    }
 }
 
 const ans = genToken("test", "test")
+console.log(ans)
+console.log(verifyToken(ans))
 
