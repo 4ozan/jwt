@@ -1,47 +1,19 @@
-import jwt from "jsonwebtoken"
-import { z } from "zod"
+import express from "express"
 
-const jwtSecret = "secret"
+const app = express();
 
-const emailSchemna = z.string().email()
-const passwordSchema = z.string().min(6)
+const port = 3000;
 
-//generate, decode , verify
-function genToken(username: string, password: string) {
-    const usernameResponse = emailSchemna.safeParse(username)
-    const passwordResponse = passwordSchema.safeParse(password)
-    if(!usernameResponse.success || !passwordResponse){
-      return null
-    }
-    
-const signature = jwt.sign({
-        username,
-        password
-    }, jwtSecret, {expiresIn: "1h"});
-    return signature;
-}
+app.get("/", (req, res) => {
+    res.send("server started")
+})
 
-function verifyToken(token:string){
-    let ans= true
-    try{
-  jwt.verify(token, jwtSecret)
-   }catch(e){
-    ans = false
-   }
-   return ans
-}
 
-function decodeToken( token: string) {
-    const decoded = jwt.decode(token)
 
-    if(decoded){
-        return true
-    }else {
-        return false
-    }
-}
 
-const ans = genToken("test", "test")
-console.log(ans)
-console.log(verifyToken(ans))
 
+
+
+app.listen(port, () => {
+console.log("server is running")
+})
