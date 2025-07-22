@@ -1,5 +1,4 @@
 import express from "express"
-import { drizzle } from 'drizzle-orm/bun-sql';
 import { usersTable } from "../src/db/Schema"
 import { eq } from "drizzle-orm"
 import db from "../src/index"
@@ -13,4 +12,10 @@ export const signup = ( req:express.Request, res:express.Response) => {
 export const Login = (req:express.Request, res:express.Response) => {
     const { email, password } = req.body;
     const user = db.select().from(usersTable).where(eq(usersTable.email, email))
+}
+
+export const profile = (req:express.Request, res:express.Response) => {
+    const { email} = req.body;
+    const user = db.select().from(usersTable).where(eq(usersTable.email, email))
+    res.send(user)
 }

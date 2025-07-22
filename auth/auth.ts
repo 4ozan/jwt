@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 
-const jwtSecret = process.env.JWT_SECRET || "your-secret-key";
+const jwtSecret = process.env.JWT_SECRET || "secret";
 
 const emailSchema = z.string().email();
 const passwordSchema = z.string().min(6);

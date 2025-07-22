@@ -1,7 +1,6 @@
 import express from "express";
-import { verifyToken, type JWTPayload } from "./jwt-utils";
+import { verifyToken, type JWTPayload } from "./auth";
 
-// Extend Express Request interface to include user
 declare global {
   namespace Express {
     interface Request {
