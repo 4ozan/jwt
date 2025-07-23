@@ -13,7 +13,6 @@ app.get("/", (req, res) => {
     res.send("server started")
 });
 
-
 app.use(router);
 
 app.listen(port, () => {

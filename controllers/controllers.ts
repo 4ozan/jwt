@@ -9,10 +9,8 @@ export const signup = async (req: express.Request, res: express.Response): Promi
   try {
     const { name, email, password } = req.body;
     
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    
-    // Insert user
+  
     await db.insert(usersTable).values({
       name,
       email,
@@ -28,8 +26,6 @@ export const signup = async (req: express.Request, res: express.Response): Promi
 export const Login = async (req: express.Request, res: express.Response): Promise<void> => {
   try {
     const { email, password } = req.body;
-    
-    // Find user
     const users = await db.select().from(usersTable).where(eq(usersTable.email, email));
     
     if (users.length === 0) {

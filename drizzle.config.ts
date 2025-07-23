@@ -2,10 +2,8 @@ import { defineConfig } from "drizzle-kit";
 import { config } from "dotenv";
 import { resolve } from "path";
 
-// Load environment variables from .env file
 config({ path: resolve(process.cwd(), '.env') });
 
-// Debug: log the DATABASE_URL (remove this after testing)
 console.log('DATABASE_URL:', process.env.DATABASE_URL);
 
 export default defineConfig({
