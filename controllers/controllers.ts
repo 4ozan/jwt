@@ -1,9 +1,9 @@
 import express from "express";
-import { usersTable } from "../src/db/Schema";
+import { usersTable, refreshTokensTable } from "../src/db/Schema";
 import { eq } from "drizzle-orm";
 import db from "../src/index";
 import bcrypt from "bcrypt";
-import { generateToken } from "../auth/auth";
+import { generateToken, generateRefreshToken, verifyToken } from "../auth/auth";
 
 export const signup = async (req: express.Request, res: express.Response): Promise<void> => {
   try {
@@ -35,7 +35,7 @@ export const Login = async (req: express.Request, res: express.Response): Promis
     
     const user = users[0];
     
-    // Check password
+
     const isValidPassword = await bcrypt.compare(password, user.password);
     
     if (!isValidPassword) {
@@ -44,16 +44,31 @@ export const Login = async (req: express.Request, res: express.Response): Promis
     }
     
     // Generate JWT token using your auth module
-    const token = generateToken(user.id, user.email);
-    
-    if (!token) {
-      res.status(500).json({ error: "Failed to generate token" });
+    // Generate access and refresh tokens
+    const accessToken = generateToken(user.id, user.email);
+    const refreshToken = generateRefreshToken(user.id, user.email);
+
+    if (!accessToken || !refreshToken) {
+      res.status(500).json({ error: "Failed to generate tokens" });
       return;
     }
+
+    // Store the refresh token in the database
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7); // Set expiration for 7 days
+
+    await db.insert(refreshTokensTable).values({
+      userId: user.id,
+      token: refreshToken,
+      expiresAt: expiresAt,
+    });
+    
+
     
     res.json({
       message: "Login successful",
-      token,
+      accessToken,
+      refreshToken,
       user: { id: user.id, name: user.name, email: user.email },
     });
   } catch (error) {
@@ -84,5 +99,72 @@ export const profile = async (req: express.Request, res: express.Response): Prom
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to get profile" });
+  }
+};
+
+export const refreshToken = async (req: express.Request, res: express.Response): Promise<void> => {
+  const { token } = req.body;
+
+  if (!token) {
+    res.status(401).json({ error: "Refresh token required" });
+    return;
+  }
+
+  try {
+    // Check if the token exists in the database
+    const storedTokens = await db.select().from(refreshTokensTable).where(eq(refreshTokensTable.token, token));
+
+    if (storedTokens.length === 0) {
+      res.status(403).json({ error: "Invalid refresh token" });
+      return;
+    }
+
+    const storedToken = storedTokens[0];
+
+    // Verify the token's signature and expiration
+    const decoded = verifyToken(storedToken.token);
+
+    if (!decoded) {
+      res.status(403).json({ error: "Invalid or expired refresh token" });
+      return;
+    }
+
+    // Generate a new access token
+    const newAccessToken = generateToken(decoded.userId, decoded.email);
+
+    if (!newAccessToken) {
+      res.status(500).json({ error: "Failed to generate new access token" });
+      return;
+    }
+
+    res.json({ accessToken: newAccessToken });
+
+  } catch (error) {
+    res.status(500).json({ error: "Failed to refresh token" });
+  }
+};
+
+export const logout = async (req: express.Request, res: express.Response): Promise<void> => {
+  const { token } = req.body;
+
+  if (!token) {
+    res.status(400).json({ error: "Refresh token required" });
+    return;
+  }
+
+  try {
+    // Delete the refresh token from the database and check if a row was affected
+    const deletedTokens = await db.delete(refreshTokensTable).where(eq(refreshTokensTable.token, token)).returning({ id: refreshTokensTable.id });
+
+    if (deletedTokens.length === 0) {
+      // This could mean the token was already invalid or the user was already logged out
+      res.status(404).json({ error: "Invalid refresh token" });
+      return;
+    }
+
+    res.status(200).json({ message: "Logout successful" });
+
+  } catch (error) {
+    res.status(500).json({ error: "Failed to logout" });
   }
 };

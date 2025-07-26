@@ -20,14 +20,14 @@ export function generateToken(userId: number, email: string): string | null {
     return null;
   }
 
-  const payload: JWTPayload = {
+  const payload:Pick<JWTPayload, "userId" | "email"> = {
     userId,
     email,
   };
 
   try {
     const token = jwt.sign(payload, jwtSecret, {
-      expiresIn: "24h",
+      expiresIn: "15m",
     });
     return token;
   } catch (error) {
@@ -54,6 +54,27 @@ export function decodeToken(token: string): JWTPayload | null {
   }
 }
 
+export function generateRefreshToken(userId: number, email: string): string | null {
+  const emailResponse = emailSchema.safeParse(email);
+  
+  if (!emailResponse.success) {
+    return null;
+  }
+
+  const payload:Pick<JWTPayload, "userId" | "email"> = {
+    userId,
+    email,
+  };
+
+  try {
+    const token = jwt.sign(payload, jwtSecret, {
+      expiresIn: "7d",
+    });
+    return token;
+  } catch (error) {
+    return null;
+  }
+}
 export function validatePassword(password: string): boolean {
   const result = passwordSchema.safeParse(password);
   return result.success;
